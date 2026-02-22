@@ -28,6 +28,9 @@
     "plugins": [
       "expo-router",
       "expo-secure-store"
-    ]
+    ],
+    "experiments": {
+      "autolinkingModuleResolution": true
+    }
   }
 }
