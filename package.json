@@ -6,9 +6,11 @@
     "dev:mobile": "pnpm --filter @infohunter/mobile start",
     "build:web": "pnpm --filter @infohunter/web build",
     "build:shared": "pnpm --filter @infohunter/shared build",
+    "ios": "bash scripts/run-ios.sh",
+    "ios:rebuild": "bash scripts/rebuild-ios.sh",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
-    "clean": "pnpm -r exec rm -rf node_modules dist .expo"
+    "clean": "pnpm -r exec rm -rf node_modules dist .expo ios android"
   },
   "engines": {
     "node": ">=18.0.0"
