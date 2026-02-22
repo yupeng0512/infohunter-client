@@ -1,0 +1,16 @@
+{
+  "name": "infohunter-client",
+  "private": true,
+  "scripts": {
+    "dev:web": "pnpm --filter @infohunter/web dev",
+    "dev:mobile": "pnpm --filter @infohunter/mobile start",
+    "build:web": "pnpm --filter @infohunter/web build",
+    "build:shared": "pnpm --filter @infohunter/shared build",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "clean": "pnpm -r exec rm -rf node_modules dist .expo"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
