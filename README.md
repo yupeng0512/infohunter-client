@@ -1,0 +1,3 @@
+# InfoHunter Client
+
+Initializing repository...
