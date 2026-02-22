@@ -1,8 +1,11 @@
-import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { configureClient } from '@infohunter/shared';
+
+configureClient({
+  baseURL: process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8000',
+});
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -11,12 +14,6 @@ const queryClient = new QueryClient({
 });
 
 export default function RootLayout() {
-  useEffect(() => {
-    configureClient({
-      baseURL: process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8000',
-    });
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
       <StatusBar style="auto" />

@@ -25,24 +25,18 @@ export default function ContentDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const contentId = Number(id);
 
-  const { data, isLoading, refetch, isRefetching } = useContents(
-    { page: 1, page_size: 1 },
-    { enabled: false },
-  );
-
-  // We fetch all contents and find the one matching the ID.
-  // In production, add a dedicated GET /api/contents/:id endpoint.
   const {
     data: contentsData,
     isLoading: contentsLoading,
-    refetch: refetchContents,
+    isRefetching,
+    refetch,
   } = useContents({ page_size: 100 });
 
   const item = contentsData?.items.find((c) => c.id === contentId);
 
   const onRefresh = useCallback(async () => {
-    await refetchContents();
-  }, [refetchContents]);
+    await refetch();
+  }, [refetch]);
 
   if (contentsLoading) return <LoadingScreen />;
 
