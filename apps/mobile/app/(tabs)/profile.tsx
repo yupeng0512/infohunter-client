@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Switch } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -7,6 +7,8 @@ import {
   useCurrentUser,
   useLogout,
   getAccessToken,
+  useUpdateUserMode,
+  useTestPush,
 } from '@infohunter/shared';
 import * as SecureStore from 'expo-secure-store';
 
@@ -16,9 +18,12 @@ export default function ProfileScreen() {
   const { data: stats } = useStats();
   const { data: currentUser } = useCurrentUser(getAccessToken() != null);
   const logout = useLogout();
+  const updateMode = useUpdateUserMode();
+  const pushTest = useTestPush();
 
   const isConnected = isHealthLoading || health?.status === 'ok';
   const isLoggedIn = currentUser != null;
+  const isCustomMode = currentUser?.mode === 'custom';
 
   const handleLogout = () => {
     Alert.alert('确认退出', '确定要退出登录吗？', [
@@ -33,6 +38,37 @@ export default function ProfileScreen() {
         },
       },
     ]);
+  };
+
+  const handleModeToggle = () => {
+    const newMode = isCustomMode ? 'global' : 'custom';
+    const modeLabel = newMode === 'custom' ? '自定义模式' : '全局模式';
+    const desc = newMode === 'custom'
+      ? '你可以添加个人订阅，同时保留全局推送内容'
+      : '所有内容来自管理员配置的全局订阅';
+
+    Alert.alert(
+      `切换到${modeLabel}`,
+      desc,
+      [
+        { text: '取消', style: 'cancel' },
+        {
+          text: '确认切换',
+          onPress: () => updateMode.mutate(newMode),
+        },
+      ],
+    );
+  };
+
+  const handleTestPush = () => {
+    pushTest.mutate(undefined, {
+      onSuccess: (res) => {
+        Alert.alert('推送测试', `发送结果: ${res.status}, 设备: ${res.sent ?? 0}`);
+      },
+      onError: () => {
+        Alert.alert('推送测试失败', '请确保已注册推送 Token');
+      },
+    });
   };
 
   return (
@@ -50,7 +86,7 @@ export default function ProfileScreen() {
         </Text>
         <Text style={styles.userMode}>
           {isLoggedIn
-            ? currentUser.mode === 'global' ? '全局模式' : '自定义模式'
+            ? isCustomMode ? '🎯 自定义模式' : '🌐 全局模式'
             : '未登录'}
         </Text>
       </View>
@@ -71,6 +107,47 @@ export default function ProfileScreen() {
         <ProfileStat label="已分析" value={stats?.contents.analyzed ?? 0} />
       </View>
 
+      {isLoggedIn && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>订阅模式</Text>
+          <View style={styles.modeCard}>
+            <View style={styles.modeCardLeft}>
+              <Ionicons
+                name={isCustomMode ? 'options-outline' : 'globe-outline'}
+                size={22}
+                color={isCustomMode ? '#8B5CF6' : '#3B82F6'}
+              />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.modeLabel}>
+                  {isCustomMode ? '自定义模式' : '全局模式'}
+                </Text>
+                <Text style={styles.modeDesc}>
+                  {isCustomMode
+                    ? '个人订阅 + 全局内容'
+                    : '统一使用管理员配置'}
+                </Text>
+              </View>
+            </View>
+            <Switch
+              value={isCustomMode}
+              onValueChange={handleModeToggle}
+              trackColor={{ false: '#E2E8F0', true: '#C4B5FD' }}
+              thumbColor={isCustomMode ? '#8B5CF6' : '#94A3B8'}
+            />
+          </View>
+          {isCustomMode && (
+            <Pressable
+              style={styles.manageSubBtn}
+              onPress={() => router.push('/subscription/manage')}
+            >
+              <Ionicons name="add-circle-outline" size={18} color="#8B5CF6" />
+              <Text style={styles.manageSubText}>管理我的订阅</Text>
+              <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
+            </Pressable>
+          )}
+        </View>
+      )}
+
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>系统状态</Text>
         <SettingRow
@@ -88,17 +165,19 @@ export default function ProfileScreen() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>通知</Text>
-        <SettingRow
-          icon="notifications-outline"
-          label="推送通知"
-          value="待配置"
-          valueColor="#F59E0B"
-        />
+        <Pressable onPress={handleTestPush}>
+          <SettingRow
+            icon="notifications-outline"
+            label="推送通知"
+            value={pushTest.isPending ? '发送中...' : '点击测试'}
+            valueColor="#3B82F6"
+          />
+        </Pressable>
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>关于</Text>
-        <SettingRow icon="information-circle-outline" label="版本" value="0.2.0" />
+        <SettingRow icon="information-circle-outline" label="版本" value="0.3.0" />
         <SettingRow icon="logo-github" label="项目" value="InfoHunter" />
       </View>
 
@@ -225,6 +304,48 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 8,
+  },
+  modeCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 10,
+    marginBottom: 2,
+  },
+  modeCardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  modeLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#0F172A',
+  },
+  modeDesc: {
+    fontSize: 12,
+    color: '#94A3B8',
+    marginTop: 2,
+  },
+  manageSubBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#F5F3FF',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginTop: 6,
+  },
+  manageSubText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#8B5CF6',
   },
   row: {
     flexDirection: 'row',

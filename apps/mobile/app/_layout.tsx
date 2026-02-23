@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { configureClient, setTokens } from '@infohunter/shared';
 import * as SecureStore from 'expo-secure-store';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 
 configureClient({
   baseURL: process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8000',
@@ -17,6 +18,7 @@ const queryClient = new QueryClient({
 
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
+  usePushNotifications();
 
   useEffect(() => {
     (async () => {
@@ -50,6 +52,14 @@ export default function RootLayout() {
         <Stack.Screen
           name="auth/login"
           options={{ title: '登录', headerShown: false, presentation: 'modal' }}
+        />
+        <Stack.Screen
+          name="subscription/manage"
+          options={{ title: '我的订阅', presentation: 'card' }}
+        />
+        <Stack.Screen
+          name="subscription/add"
+          options={{ title: '添加订阅', presentation: 'modal' }}
         />
         <Stack.Screen
           name="content/[id]"

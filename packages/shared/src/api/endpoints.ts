@@ -168,12 +168,28 @@ export const updateUserMode = (mode: 'global' | 'custom') =>
 // --- Devices ---
 
 export const registerDevice = (data: DeviceRegistration) =>
-  apiPost<{ status: string; device_id: string }>(
-    `/api/devices/register?device_id=${encodeURIComponent(data.device_id)}&platform=${data.platform}&push_token=${encodeURIComponent(data.push_token)}${data.app_version ? `&app_version=${data.app_version}` : ''}`,
-  );
+  apiPost<{ status: string; device_id: string }>('/api/devices/register', data);
 
 export const unregisterDevice = (deviceId: string) =>
   apiDelete<{ status: string }>(`/api/devices/${deviceId}`);
 
 export const listDevices = () =>
   apiGet<DeviceListResponse>('/api/devices');
+
+// --- User Subscriptions ---
+
+import type { UserSubscriptionItem, UserSubscriptionCreate, UserSubscriptionCreateResponse } from '../types';
+
+export const fetchUserSubscriptions = () =>
+  apiGet<UserSubscriptionItem[]>('/api/user/subscriptions');
+
+export const createUserSubscription = (data: UserSubscriptionCreate) =>
+  apiPost<UserSubscriptionCreateResponse>('/api/user/subscriptions', data);
+
+export const deleteUserSubscription = (subId: number) =>
+  apiDelete<{ status: string }>(`/api/user/subscriptions/${subId}`);
+
+// --- Push Test ---
+
+export const testPush = (data?: { title?: string; body?: string }) =>
+  apiPost<{ status: string; sent: number }>('/api/push/test', data || {});
