@@ -1,4 +1,4 @@
-# InfoHunter Client
+138号顾客取餐# InfoHunter Client
 
 InfoHunter AI 社交媒体智能监控系统 - 双端客户端（Monorepo 架构）
 

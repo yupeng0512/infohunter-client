@@ -1,11 +1,27 @@
-import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
+import axios, { type AxiosInstance, type AxiosRequestConfig, type InternalAxiosRequestConfig } from 'axios';
 
 let _client: AxiosInstance | null = null;
+let _refreshPromise: Promise<string> | null = null;
+let _getRefreshToken: (() => string | null) | null = null;
+let _onTokenRefreshed: ((access: string) => void) | null = null;
+let _onRefreshFailed: (() => void) | null = null;
 
 export interface ClientConfig {
   baseURL: string;
   apiKey?: string;
   timeout?: number;
+}
+
+export interface AuthInterceptorConfig {
+  getRefreshToken: () => string | null;
+  onTokenRefreshed: (accessToken: string) => void;
+  onRefreshFailed: () => void;
+}
+
+export function setupAuthInterceptor(config: AuthInterceptorConfig) {
+  _getRefreshToken = config.getRefreshToken;
+  _onTokenRefreshed = config.onTokenRefreshed;
+  _onRefreshFailed = config.onRefreshFailed;
 }
 
 export function configureClient(config: ClientConfig): AxiosInstance {
@@ -17,6 +33,46 @@ export function configureClient(config: ClientConfig): AxiosInstance {
       ...(config.apiKey ? { 'X-API-Key': config.apiKey } : {}),
     },
   });
+
+  _client.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+      const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+      if (
+        error.response?.status === 401 &&
+        !original._retry &&
+        _getRefreshToken?.() &&
+        !original.url?.includes('/api/auth/')
+      ) {
+        original._retry = true;
+
+        if (!_refreshPromise) {
+          _refreshPromise = (async () => {
+            try {
+              const res = await _client!.post('/api/auth/refresh', {
+                refresh_token: _getRefreshToken!(),
+              });
+              const newToken: string = res.data.access_token;
+              _onTokenRefreshed?.(newToken);
+              return newToken;
+            } catch {
+              _onRefreshFailed?.();
+              throw error;
+            } finally {
+              _refreshPromise = null;
+            }
+          })();
+        }
+
+        const newToken = await _refreshPromise;
+        original.headers['Authorization'] = `Bearer ${newToken}`;
+        return _client!(original);
+      }
+
+      return Promise.reject(error);
+    },
+  );
+
   return _client;
 }
 

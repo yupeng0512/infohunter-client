@@ -12,17 +12,16 @@ export interface StatsResponse {
     total: number;
     active: number;
     paused: number;
-    by_source: Record<string, number>;
   };
   contents: {
     total: number;
-    analyzed: number;
-    unanalyzed: number;
-    by_source: Record<string, number>;
-    recent_24h: number;
+    twitter: number;
+    youtube: number;
+    blog: number;
+    today: number;
+    this_week: number;
   };
   notifications: {
-    total_notified: number;
     pending: number;
   };
   modules: Record<string, unknown>;
@@ -31,13 +30,42 @@ export interface StatsResponse {
   twitter_credits: Record<string, unknown>;
 }
 
-export interface CreditSummary {
-  period_days: number;
+export interface CreditDailyTrend {
+  date: string;
   total_credits: number;
-  by_source: Record<string, number>;
-  by_operation: Record<string, number>;
-  by_context: Record<string, number>;
-  daily_average: number;
+  call_count: number;
+}
+
+export interface CreditOperationBreakdown {
+  operation: string;
+  context: string;
+  total_credits: number;
+  call_count: number;
+}
+
+export interface CreditSummary {
+  today: {
+    used: number;
+    limit: number;
+    remaining: number;
+    percentage: number;
+  };
+  period: {
+    week: number;
+    month: number;
+    avg_daily: number;
+  };
+  cost_estimate: {
+    monthly_credits: number;
+    monthly_usd: number;
+    plan: string;
+  };
+  daily_trend: CreditDailyTrend[];
+  by_operation: {
+    today: CreditOperationBreakdown[];
+    week: CreditOperationBreakdown[];
+  };
+  in_memory: Record<string, unknown>;
 }
 
 export interface CreditRecord {

@@ -2,7 +2,6 @@ import {
   useCreditSummary,
   useCreditRecords,
   formatRelativeTime,
-  getSourceLabel,
 } from '@infohunter/shared';
 
 export function CostsPage() {
@@ -21,43 +20,47 @@ export function CostsPage() {
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
-              <p className="text-sm text-slate-500 mb-1">30 天总消耗</p>
-              <p className="text-3xl font-bold text-slate-900">{summary.total_credits}</p>
-              <p className="text-xs text-slate-400 mt-1">credits</p>
+              <p className="text-sm text-slate-500 mb-1">今日用量</p>
+              <p className="text-3xl font-bold text-slate-900">{summary.today.used}</p>
+              <p className="text-xs text-slate-400 mt-1">/ {summary.today.limit} ({summary.today.percentage}%)</p>
             </div>
             <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
               <p className="text-sm text-slate-500 mb-1">日均消耗</p>
               <p className="text-3xl font-bold text-blue-600">
-                {Math.round(summary.daily_average)}
+                {summary.period.avg_daily}
               </p>
             </div>
-            {Object.entries(summary.by_source).map(([src, credits]) => (
-              <div key={src} className="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
-                <p className="text-sm text-slate-500 mb-1">{getSourceLabel(src)}</p>
-                <p className="text-3xl font-bold text-slate-900">{credits as number}</p>
-              </div>
-            ))}
+            <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
+              <p className="text-sm text-slate-500 mb-1">本月累计</p>
+              <p className="text-3xl font-bold text-slate-900">{summary.period.month}</p>
+              <p className="text-xs text-slate-400 mt-1">≈ ${summary.cost_estimate.monthly_usd}</p>
+            </div>
+            <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
+              <p className="text-sm text-slate-500 mb-1">剩余额度</p>
+              <p className="text-3xl font-bold text-emerald-600">{summary.today.remaining}</p>
+              <p className="text-xs text-slate-400 mt-1">{summary.cost_estimate.plan}</p>
+            </div>
           </div>
 
-          {summary.by_operation && Object.keys(summary.by_operation).length > 0 && (
+          {summary.by_operation?.today && summary.by_operation.today.length > 0 && (
             <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-5 mb-8">
-              <h3 className="font-semibold text-slate-900 mb-3">按操作分布</h3>
+              <h3 className="font-semibold text-slate-900 mb-3">今日操作分布</h3>
               <div className="space-y-2">
-                {Object.entries(summary.by_operation).map(([op, credits]) => {
-                  const pct = summary.total_credits
-                    ? Math.round(((credits as number) / summary.total_credits) * 100)
+                {summary.by_operation.today.map((item) => {
+                  const pct = summary.today.used
+                    ? Math.round((item.total_credits / summary.today.used) * 100)
                     : 0;
                   return (
-                    <div key={op} className="flex items-center gap-3">
-                      <span className="text-sm text-slate-600 w-32">{op}</span>
+                    <div key={`${item.operation}-${item.context}`} className="flex items-center gap-3">
+                      <span className="text-sm text-slate-600 w-40">{item.operation} ({item.context})</span>
                       <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-blue-500 rounded-full"
                           style={{ width: `${pct}%` }}
                         />
                       </div>
-                      <span className="text-sm text-slate-500 w-20 text-right">
-                        {credits as number} ({pct}%)
+                      <span className="text-sm text-slate-500 w-24 text-right">
+                        {item.total_credits} ({pct}%)
                       </span>
                     </div>
                   );

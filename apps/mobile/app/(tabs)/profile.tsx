@@ -104,7 +104,7 @@ export default function ProfileScreen() {
       <View style={styles.statsRow}>
         <ProfileStat label="订阅" value={stats?.subscriptions.active ?? 0} />
         <ProfileStat label="内容" value={stats?.contents.total ?? 0} />
-        <ProfileStat label="已分析" value={stats?.contents.analyzed ?? 0} />
+        <ProfileStat label="今日" value={stats?.contents.today ?? 0} />
       </View>
 
       {isLoggedIn && (

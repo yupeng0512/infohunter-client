@@ -23,11 +23,11 @@ export function DashboardPage() {
         <StatCard
           label="总内容数"
           value={stats?.contents.total ?? 0}
-          sub={`24h 新增 ${stats?.contents.recent_24h ?? 0}`}
+          sub={`今日新增 ${stats?.contents.today ?? 0}`}
           color="emerald"
         />
-        <StatCard label="已分析" value={stats?.contents.analyzed ?? 0} color="violet" />
-        <StatCard label="待分析" value={stats?.contents.unanalyzed ?? 0} color="amber" />
+        <StatCard label="本周" value={stats?.contents.this_week ?? 0} color="violet" />
+        <StatCard label="待通知" value={stats?.notifications?.pending ?? 0} color="amber" />
       </div>
 
       <div className="grid grid-cols-3 gap-4 mb-8">

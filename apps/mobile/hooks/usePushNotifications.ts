@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
-import { registerDevice, getAccessToken } from '@infohunter/shared';
+import { registerDevice, getAccessToken, setTokenChangeHandler } from '@infohunter/shared';
 import Constants from 'expo-constants';
 
 Notifications.setNotificationHandler({
@@ -17,30 +17,35 @@ export function usePushNotifications() {
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
   const notificationListener = useRef<Notifications.EventSubscription | null>(null);
   const responseListener = useRef<Notifications.EventSubscription | null>(null);
+  const tokenRef = useRef<string | null>(null);
 
   useEffect(() => {
     registerForPushNotifications().then((token) => {
       if (token) {
         setExpoPushToken(token);
+        tokenRef.current = token;
         registerTokenWithBackend(token);
       }
     });
 
+    setTokenChangeHandler((access) => {
+      if (access && tokenRef.current) {
+        registerTokenWithBackend(tokenRef.current);
+      }
+    });
+
     notificationListener.current = Notifications.addNotificationReceivedListener(
-      (_notification) => {
-        // 在前台收到通知时的处理逻辑（可扩展）
-      },
+      (_notification) => {},
     );
 
     responseListener.current = Notifications.addNotificationResponseReceivedListener(
-      (_response) => {
-        // 用户点击通知后的处理逻辑（可扩展导航）
-      },
+      (_response) => {},
     );
 
     return () => {
       notificationListener.current?.remove();
       responseListener.current?.remove();
+      setTokenChangeHandler(null);
     };
   }, []);
 

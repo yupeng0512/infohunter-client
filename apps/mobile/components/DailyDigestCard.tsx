@@ -5,8 +5,8 @@ import { useStats } from '@infohunter/shared';
 export function DailyDigestCard() {
   const { data: stats } = useStats();
 
-  const newToday = stats?.contents.recent_24h ?? 0;
-  const analyzed = stats?.contents.analyzed ?? 0;
+  const newToday = stats?.contents.today ?? 0;
+  const totalContents = stats?.contents.total ?? 0;
   const activeSubs = stats?.subscriptions.active ?? 0;
 
   const todayStr = new Date().toLocaleDateString('zh-CN', {
@@ -26,9 +26,9 @@ export function DailyDigestCard() {
       </View>
 
       <View style={styles.statsRow}>
-        <DigestStat label="新内容" value={newToday} icon="add-circle-outline" color="#10B981" />
+        <DigestStat label="今日新增" value={newToday} icon="add-circle-outline" color="#10B981" />
         <View style={styles.divider} />
-        <DigestStat label="已分析" value={analyzed} icon="analytics-outline" color="#8B5CF6" />
+        <DigestStat label="总内容" value={totalContents} icon="analytics-outline" color="#8B5CF6" />
         <View style={styles.divider} />
         <DigestStat label="订阅源" value={activeSubs} icon="layers-outline" color="#3B82F6" />
       </View>

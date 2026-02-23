@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { authLogin, authRegister, authMe, authRefresh } from '../api/endpoints';
-import { getClient } from '../api/client';
-import type { LoginRequest, RegisterRequest, AuthUser, TokenResponse } from '../types';
+import { authLogin, authRegister, authMe } from '../api/endpoints';
+import { getClient, setupAuthInterceptor } from '../api/client';
+import type { LoginRequest, RegisterRequest, TokenResponse } from '../types';
 
 export const authKeys = {
   me: ['auth', 'me'] as const,
@@ -10,11 +10,29 @@ export const authKeys = {
 let _accessToken: string | null = null;
 let _refreshToken: string | null = null;
 let _onTokenChange: ((access: string | null, refresh: string | null) => void) | null = null;
+let _interceptorInitialized = false;
 
 export function setTokenChangeHandler(
-  handler: (access: string | null, refresh: string | null) => void,
+  handler: ((access: string | null, refresh: string | null) => void) | null,
 ) {
   _onTokenChange = handler;
+}
+
+function ensureInterceptor() {
+  if (_interceptorInitialized) return;
+  _interceptorInitialized = true;
+  setupAuthInterceptor({
+    getRefreshToken: () => _refreshToken,
+    onTokenRefreshed: (newAccess) => {
+      _accessToken = newAccess;
+      const client = getClient();
+      client.defaults.headers.common['Authorization'] = `Bearer ${newAccess}`;
+      _onTokenChange?.(newAccess, _refreshToken);
+    },
+    onRefreshFailed: () => {
+      clearTokens();
+    },
+  });
 }
 
 export function setTokens(access: string | null, refresh: string | null) {
@@ -26,6 +44,7 @@ export function setTokens(access: string | null, refresh: string | null) {
   } else {
     delete client.defaults.headers.common['Authorization'];
   }
+  ensureInterceptor();
   _onTokenChange?.(access, refresh);
 }
 
@@ -34,7 +53,11 @@ export function getAccessToken(): string | null {
 }
 
 export function clearTokens() {
-  setTokens(null, null);
+  _accessToken = null;
+  _refreshToken = null;
+  const client = getClient();
+  delete client.defaults.headers.common['Authorization'];
+  _onTokenChange?.(null, null);
 }
 
 function handleAuthResponse(data: TokenResponse) {
