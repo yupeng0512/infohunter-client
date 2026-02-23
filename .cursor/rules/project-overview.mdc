@@ -41,3 +41,4 @@ infohunter-client/
 - react-native 0.81.5 需要 pnpm patch 才能配合 react 19.1.4
 - `patches/` 目录必须提交到 Git
 - `expo-notifications` 0.32+ 已移除 `removeNotificationSubscription`，用 `subscription.remove()`
+- **禁止** 在 app.json 中设置 `experiments.reactCanary: true`（会加载 canary renderer 导致版本不匹配）

@@ -23,7 +23,6 @@ CVSS 10.0，已有公开 POC 和攻击案例。
 1. **react override 锁定 19.1.4**（`package.json` → `pnpm.overrides`）
 2. **pnpm patch react-native@0.81.5**（修补 renderer 版本检查 19.1.0→19.1.4）
 3. **react-server-dom-webpack override 19.1.4**（防御性，防止任何依赖引入漏洞版本）
-4. **experiments.reactCanary: true**（`app.json`，额外保险）
 
 ### 禁止操作
 

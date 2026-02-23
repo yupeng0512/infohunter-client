@@ -31,8 +31,7 @@
       "expo-secure-store"
     ],
     "experiments": {
-      "autolinkingModuleResolution": true,
-      "reactCanary": true
+      "autolinkingModuleResolution": true
     }
   }
 }
