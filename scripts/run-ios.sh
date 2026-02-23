@@ -15,7 +15,9 @@ cd "$MOBILE_DIR"
 # 如果 ios/ 目录不存在，自动 prebuild
 if [ ! -d "ios" ]; then
   echo "[!] ios/ 目录不存在，执行 prebuild..."
-  npx expo prebuild --platform ios
+  npx expo prebuild --platform ios --no-install
+  echo "[*] Installing CocoaPods..."
+  cd ios && pod install --verbose && cd ..
 fi
 
 npx expo run:ios

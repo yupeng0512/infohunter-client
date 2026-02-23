@@ -30,14 +30,6 @@ export default function RootLayout() {
           name="content/[id]"
           options={{ title: '内容详情', presentation: 'card' }}
         />
-        <Stack.Screen
-          name="subscription/create"
-          options={{ title: '创建订阅', presentation: 'modal' }}
-        />
-        <Stack.Screen
-          name="analyze/index"
-          options={{ title: 'AI 分析', presentation: 'modal' }}
-        />
       </Stack>
     </QueryClientProvider>
   );

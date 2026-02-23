@@ -1,131 +1,113 @@
-import { View, Text, ScrollView, StyleSheet, Pressable, RefreshControl } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useStats, useHealth, useTriggerSmartCollect, useTriggerDailyReport } from '@infohunter/shared';
-import { StatCard, LoadingScreen } from '../../components';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  Pressable,
+} from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useState, useCallback } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import {
+  useInfiniteContents,
+  useHealth,
+  type Source,
+} from '@infohunter/shared';
+import { ContentCard, EmptyState, LoadingScreen, DailyDigestCard } from '../../components';
 
-export default function DashboardScreen() {
-  const router = useRouter();
-  const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useStats();
-  const { data: health, refetch: refetchHealth } = useHealth();
-  const smartCollect = useTriggerSmartCollect();
-  const dailyReport = useTriggerDailyReport();
-  const [refreshing, setRefreshing] = useState(false);
+const SOURCES: { label: string; value: Source | undefined }[] = [
+  { label: '全部', value: undefined },
+  { label: 'Twitter', value: 'twitter' },
+  { label: 'YouTube', value: 'youtube' },
+  { label: 'Blog', value: 'blog' },
+];
+
+export default function TodayScreen() {
+  const [selectedSource, setSelectedSource] = useState<Source | undefined>(undefined);
+  const { data: health, isLoading: isHealthLoading } = useHealth();
+
+  const {
+    data,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch,
+    isRefetching,
+  } = useInfiniteContents({ source: selectedSource, page_size: 20 });
+
+  const items = data?.pages.flatMap((p) => p.items) ?? [];
 
   const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await Promise.all([refetchStats(), refetchHealth()]);
-    setRefreshing(false);
-  }, [refetchStats, refetchHealth]);
+    await refetch();
+  }, [refetch]);
 
-  if (statsLoading) return <LoadingScreen />;
+  if (isLoading) return <LoadingScreen />;
+
+  const isConnected = isHealthLoading || health?.status === 'ok';
 
   return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3B82F6" />
-      }
-    >
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>概览</Text>
-        <View style={styles.statsGrid}>
-          <StatCard
-            title="活跃订阅"
-            value={stats?.subscriptions.active ?? 0}
-            color="#3B82F6"
+    <View style={styles.container}>
+      <FlashList
+        data={items}
+        renderItem={({ item }) => <ContentCard item={item} />}
+        keyExtractor={(item) => String(item.id)}
+        estimatedItemSize={180}
+        contentContainerStyle={{ paddingBottom: 24 }}
+        onEndReached={() => {
+          if (hasNextPage && !isFetchingNextPage) fetchNextPage();
+        }}
+        onEndReachedThreshold={0.5}
+        refreshing={isRefetching}
+        onRefresh={onRefresh}
+        ListHeaderComponent={
+          <View>
+            {!isConnected && (
+              <View style={styles.offlineBanner}>
+                <Ionicons name="cloud-offline-outline" size={14} color="#F59E0B" />
+                <Text style={styles.offlineText}>后端未连接</Text>
+              </View>
+            )}
+            <DailyDigestCard />
+            <View style={styles.filterBar}>
+              {SOURCES.map((s) => (
+                <Pressable
+                  key={s.label}
+                  style={[
+                    styles.filterChip,
+                    selectedSource === s.value && styles.filterChipActive,
+                  ]}
+                  onPress={() => setSelectedSource(s.value)}
+                >
+                  <Text
+                    style={[
+                      styles.filterText,
+                      selectedSource === s.value && styles.filterTextActive,
+                    ]}
+                  >
+                    {s.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        }
+        ListEmptyComponent={
+          <EmptyState
+            icon="today-outline"
+            title="暂无内容"
+            message="下拉刷新获取最新内容"
           />
-          <StatCard
-            title="总内容数"
-            value={stats?.contents.total ?? 0}
-            subtitle={`24h 新增 ${stats?.contents.recent_24h ?? 0}`}
-            color="#10B981"
-          />
-        </View>
-        <View style={styles.statsGrid}>
-          <StatCard
-            title="Twitter"
-            value={health?.twitter_contents ?? 0}
-            color="#1DA1F2"
-          />
-          <StatCard
-            title="YouTube"
-            value={health?.youtube_contents ?? 0}
-            color="#FF0000"
-          />
-        </View>
-        <View style={styles.statsGrid}>
-          <StatCard
-            title="Blog/RSS"
-            value={health?.blog_contents ?? 0}
-            color="#FF8C00"
-          />
-          <StatCard
-            title="已分析"
-            value={stats?.contents.analyzed ?? 0}
-            subtitle={`待分析 ${stats?.contents.unanalyzed ?? 0}`}
-            color="#8B5CF6"
-          />
-        </View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>快捷操作</Text>
-        <View style={styles.actions}>
-          <ActionButton
-            icon="flash-outline"
-            label="智能采集"
-            loading={smartCollect.isPending}
-            onPress={() => smartCollect.mutate()}
-            color="#3B82F6"
-          />
-          <ActionButton
-            icon="document-text-outline"
-            label="生成日报"
-            loading={dailyReport.isPending}
-            onPress={() => dailyReport.mutate()}
-            color="#10B981"
-          />
-          <ActionButton
-            icon="search-outline"
-            label="AI 分析"
-            onPress={() => router.push('/analyze')}
-            color="#8B5CF6"
-          />
-        </View>
-      </View>
-    </ScrollView>
-  );
-}
-
-function ActionButton({
-  icon,
-  label,
-  onPress,
-  loading,
-  color,
-}: {
-  icon: React.ComponentProps<typeof Ionicons>['name'];
-  label: string;
-  onPress: () => void;
-  loading?: boolean;
-  color: string;
-}) {
-  return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.actionBtn,
-        pressed && { opacity: 0.8, transform: [{ scale: 0.97 }] },
-      ]}
-      onPress={onPress}
-      disabled={loading}
-    >
-      <View style={[styles.actionIcon, { backgroundColor: color + '14' }]}>
-        <Ionicons name={icon} size={22} color={color} />
-      </View>
-      <Text style={styles.actionLabel}>{loading ? '处理中...' : label}</Text>
-    </Pressable>
+        }
+        ListFooterComponent={
+          isFetchingNextPage ? (
+            <View style={styles.footer}>
+              <ActivityIndicator size="small" color="#3B82F6" />
+            </View>
+          ) : null
+        }
+      />
+    </View>
   );
 }
 
@@ -134,47 +116,47 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
-  section: {
-    padding: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 12,
-  },
-  statsGrid: {
+  offlineBanner: {
     flexDirection: 'row',
-    gap: 10,
-    marginBottom: 10,
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  actionBtn: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  actionIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
     justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
+    gap: 6,
+    backgroundColor: '#FFFBEB',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#FDE68A',
   },
-  actionLabel: {
+  offlineText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#334155',
+    color: '#B45309',
+    fontWeight: '500',
+  },
+  filterBar: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    gap: 8,
+  },
+  filterChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: '#F1F5F9',
+  },
+  filterChipActive: {
+    backgroundColor: '#3B82F6',
+  },
+  filterText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#64748B',
+  },
+  filterTextActive: {
+    color: '#FFFFFF',
+  },
+  footer: {
+    paddingVertical: 20,
+    alignItems: 'center',
   },
 });

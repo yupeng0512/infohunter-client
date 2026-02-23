@@ -28,29 +28,22 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: '首页',
-          tabBarIcon: tabIcon('home-outline'),
+          title: '今日',
+          tabBarIcon: tabIcon('today-outline'),
         }}
       />
       <Tabs.Screen
-        name="feed"
+        name="discover"
         options={{
-          title: '内容',
-          tabBarIcon: tabIcon('newspaper-outline'),
+          title: '发现',
+          tabBarIcon: tabIcon('compass-outline'),
         }}
       />
       <Tabs.Screen
-        name="subscriptions"
+        name="profile"
         options={{
-          title: '订阅',
-          tabBarIcon: tabIcon('layers-outline'),
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: '设置',
-          tabBarIcon: tabIcon('settings-outline'),
+          title: '我的',
+          tabBarIcon: tabIcon('person-outline'),
         }}
       />
     </Tabs>
