@@ -41,6 +41,12 @@ infohunter-client/
 └── pnpm-workspace.yaml         # pnpm workspace
 ```
 
+## 安全补丁
+
+本项目通过 `pnpm patch` 修补了 react-native 0.81.5 的 renderer 版本检查，使其兼容 react 19.1.4（CVE-2025-55182 安全修复版本）。`pnpm install` 时会自动应用 `patches/react-native@0.81.5.patch`。
+
+**重要**：不要将 react 降级到 19.1.4 以下，不要删除 `patches/` 目录。
+
 ## 环境要求
 
 | 工具 | 版本 | 用途 |
@@ -106,13 +112,21 @@ open ios/InfoHunter.xcworkspace
 如果想要热重载开发体验（改代码实时刷新），可以用 Expo 开发服务器：
 
 ```bash
+# Development Build 模式（推荐，需先完成第 4-5 步）
 cd apps/mobile
-npx expo start
+pnpm start
+
+# 或 Expo Go 模式（无需编译原生代码）
+pnpm start:go
 ```
 
-然后：
-- 按 `i` 在 iOS 模拟器中打开
-- 或用手机扫码通过 Expo Go App 预览
+也可以从项目根目录执行：
+
+```bash
+pnpm ios            # 一键启动（自动 prebuild + 编译 + Simulator）
+pnpm ios:rebuild    # 完全重建（清理一切 → 重装 → 重新编译）
+pnpm ios:dev        # 仅启动 Metro（App 已安装时使用）
+```
 
 ## Expo 是什么？
 

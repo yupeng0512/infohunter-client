@@ -5,11 +5,14 @@
   "scripts": {
     "dev:web": "pnpm --filter @infohunter/web dev",
     "dev:mobile": "pnpm --filter @infohunter/mobile start",
+    "dev:mobile:go": "pnpm --filter @infohunter/mobile start:go",
     "build:web": "pnpm --filter @infohunter/web build",
     "build:shared": "pnpm --filter @infohunter/shared build",
     "ios": "bash scripts/run-ios.sh",
     "ios:rebuild": "bash scripts/rebuild-ios.sh",
     "ios:dev": "bash scripts/dev.sh",
+    "ios:dev:go": "bash scripts/dev.sh --go",
+    "prebuild:ios": "pnpm --filter @infohunter/mobile prebuild",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
     "clean": "pnpm -r exec rm -rf node_modules dist .expo ios android"
@@ -21,7 +24,11 @@
     "overrides": {
       "react": "19.1.4",
       "react-native": "0.81.5",
-      "@tanstack/react-query": "^5.60.0"
+      "@tanstack/react-query": "^5.60.0",
+      "react-server-dom-webpack": "19.1.4"
+    },
+    "patchedDependencies": {
+      "react-native@0.81.5": "patches/react-native@0.81.5.patch"
     }
   }
 }
