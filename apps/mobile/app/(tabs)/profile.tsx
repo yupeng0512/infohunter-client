@@ -1,22 +1,69 @@
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useHealth, useStats } from '@infohunter/shared';
+import {
+  useHealth,
+  useStats,
+  useCurrentUser,
+  useLogout,
+  getAccessToken,
+} from '@infohunter/shared';
+import * as SecureStore from 'expo-secure-store';
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const { data: health, isLoading: isHealthLoading } = useHealth();
   const { data: stats } = useStats();
+  const { data: currentUser } = useCurrentUser(getAccessToken() != null);
+  const logout = useLogout();
 
   const isConnected = isHealthLoading || health?.status === 'ok';
+  const isLoggedIn = currentUser != null;
+
+  const handleLogout = () => {
+    Alert.alert('确认退出', '确定要退出登录吗？', [
+      { text: '取消', style: 'cancel' },
+      {
+        text: '退出',
+        style: 'destructive',
+        onPress: async () => {
+          await SecureStore.deleteItemAsync('access_token');
+          await SecureStore.deleteItemAsync('refresh_token');
+          logout();
+        },
+      },
+    ]);
+  };
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.profileHeader}>
         <View style={styles.avatar}>
-          <Ionicons name="person" size={32} color="#94A3B8" />
+          <Ionicons
+            name={isLoggedIn ? 'person' : 'person-outline'}
+            size={32}
+            color={isLoggedIn ? '#3B82F6' : '#94A3B8'}
+          />
         </View>
-        <Text style={styles.userName}>InfoHunter 用户</Text>
-        <Text style={styles.userMode}>全局模式</Text>
+        <Text style={styles.userName}>
+          {isLoggedIn ? currentUser.username : 'InfoHunter 用户'}
+        </Text>
+        <Text style={styles.userMode}>
+          {isLoggedIn
+            ? currentUser.mode === 'global' ? '全局模式' : '自定义模式'
+            : '未登录'}
+        </Text>
       </View>
+
+      {!isLoggedIn && (
+        <Pressable
+          style={styles.loginBtn}
+          onPress={() => router.push('/auth/login')}
+        >
+          <Ionicons name="log-in-outline" size={18} color="#FFFFFF" />
+          <Text style={styles.loginBtnText}>登录 / 注册</Text>
+        </Pressable>
+      )}
 
       <View style={styles.statsRow}>
         <ProfileStat label="订阅" value={stats?.subscriptions.active ?? 0} />
@@ -54,6 +101,13 @@ export default function ProfileScreen() {
         <SettingRow icon="information-circle-outline" label="版本" value="0.2.0" />
         <SettingRow icon="logo-github" label="项目" value="InfoHunter" />
       </View>
+
+      {isLoggedIn && (
+        <Pressable style={styles.logoutBtn} onPress={handleLogout}>
+          <Ionicons name="log-out-outline" size={18} color="#EF4444" />
+          <Text style={styles.logoutText}>退出登录</Text>
+        </Pressable>
+      )}
 
       <View style={{ height: 40 }} />
     </ScrollView>
@@ -122,6 +176,22 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
     marginTop: 4,
   },
+  loginBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#3B82F6',
+    marginHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  loginBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -178,5 +248,23 @@ const styles = StyleSheet.create({
   rowValue: {
     fontSize: 14,
     color: '#64748B',
+  },
+  logoutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginHorizontal: 16,
+    marginTop: 24,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    backgroundColor: '#FEF2F2',
+  },
+  logoutText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#EF4444',
   },
 });

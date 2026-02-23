@@ -121,9 +121,51 @@ export const analyzeUrl = (data: AnalyzeUrlRequest) =>
 export const analyzeAuthor = (data: AnalyzeAuthorRequest) =>
   apiPost<AnalyzeAuthorResponse>('/api/analyze/author', data);
 
-// --- Devices ---
+// --- Auth ---
 
-import type { DeviceRegistration, DeviceListResponse } from '../types';
+import type {
+  LoginRequest,
+  RegisterRequest,
+  TokenResponse,
+  RefreshResponse,
+  AuthUser,
+  UserFeedResponse,
+  DeviceRegistration,
+  DeviceListResponse,
+} from '../types';
+
+export const authRegister = (data: RegisterRequest) =>
+  apiPost<TokenResponse>('/api/auth/register', data);
+
+export const authLogin = (data: LoginRequest) => {
+  const formData = new URLSearchParams();
+  formData.append('username', data.username);
+  formData.append('password', data.password);
+  return apiPost<TokenResponse>('/api/auth/login', formData, {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  });
+};
+
+export const authRefresh = (refreshToken: string) =>
+  apiPost<RefreshResponse>('/api/auth/refresh', { refresh_token: refreshToken });
+
+export const authMe = () => apiGet<AuthUser>('/api/auth/me');
+
+// --- User Feed ---
+
+export const fetchUserFeed = (params?: {
+  page?: number;
+  page_size?: number;
+  unread_only?: boolean;
+}) => apiGet<UserFeedResponse>('/api/user/feed', { params });
+
+export const markFeedRead = (contentId: number) =>
+  apiPost<{ status: string }>(`/api/user/feed/${contentId}/read`);
+
+export const updateUserMode = (mode: 'global' | 'custom') =>
+  apiPut<{ status: string; mode: string }>('/api/user/mode', { mode });
+
+// --- Devices ---
 
 export const registerDevice = (data: DeviceRegistration) =>
   apiPost<{ status: string; device_id: string }>(

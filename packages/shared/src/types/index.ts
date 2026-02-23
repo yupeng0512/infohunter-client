@@ -4,3 +4,4 @@ export * from './content';
 export * from './stats';
 export * from './analyze';
 export * from './device';
+export * from './auth';
