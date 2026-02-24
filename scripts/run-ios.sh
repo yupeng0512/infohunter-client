@@ -8,16 +8,21 @@ echo "▶ InfoHunter iOS 快速启动"
 echo "========================="
 
 cd "$ROOT_DIR"
+git stash 2>/dev/null || true
 git pull 2>/dev/null || true
+
+if [ ! -d "$ROOT_DIR/node_modules" ]; then
+  echo "[!] node_modules missing, installing..."
+  pnpm install
+fi
 
 cd "$MOBILE_DIR"
 
-# 如果 ios/ 目录不存在，自动 prebuild
 if [ ! -d "ios" ]; then
   echo "[!] ios/ 目录不存在，执行 prebuild..."
-  npx expo prebuild --platform ios --no-install
+  npx expo prebuild --platform ios --clean --no-install
   echo "[*] Installing CocoaPods..."
-  cd ios && pod install --verbose && cd ..
+  cd ios && pod install && cd ..
 fi
 
 npx expo run:ios
