@@ -13,8 +13,8 @@
     "@infohunter/shared": "workspace:*",
     "@tanstack/react-query": "^5.60.0",
     "axios": "^1.7.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
+    "react": "19.1.4",
+    "react-dom": "19.1.4",
     "react-router-dom": "^7.6.0",
     "zustand": "^5.0.0"
   },
